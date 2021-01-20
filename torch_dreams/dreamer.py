@@ -17,6 +17,7 @@ from .dreamer_utils import make_octave_sizes
 
 from .octave_utils import dream_on_octave_with_masks
 from .octave_utils import dream_on_octave
+import matplotlib.pyplot as plt
 
 class dreamer():
 
@@ -63,6 +64,8 @@ class dreamer():
         """
     
         img = image_np.copy()
+        # plt.imshow(img)
+        # plt.show()
         octaves = []  
 
         for size in octave_sizes[::-1]:

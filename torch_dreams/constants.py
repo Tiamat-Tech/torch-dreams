@@ -39,3 +39,18 @@ default_config = {
     "gradient_smoothing_kernel_size": None,
     "grad_mask": None,
 }
+
+circuits_default_config = {
+    "image_path": None,
+    "image": None,
+    "layers": None,
+    "octave_scale": 1.0,
+    "num_octaves": 1,
+    "iterations": 1,
+    "lr": None,
+    "custom_func": None,
+    "max_rotation": 0.5,
+    "grayscale": False,
+    "gradient_smoothing_coeff": None,
+    "gradient_smoothing_kernel_size": None
+}
