@@ -5,9 +5,7 @@
 When a deep-learning model looks for an eye, what does it look for ? Does it look for eyebrows ? or eyeballs maybe ? This is exactly what torch-dreams can help us answer.
 
 <p align="center">
-<img src = "https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/face_segmentation_breakdown_with_torch_dreams.jpg?raw=true">
-
-**Figure 1**: A breakdown of a facial segmentation model’s classes with torch-dreams
+<img src = "https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/face_segmentation_breakdown_with_torch_dreams.jpg?raw=true"> Figure 1: A breakdown of a facial segmentation model’s classes with torch-dreams
 </p>
 
 Torch-Dreams is a tool that helps visualize what each layer/channel/unit within a neural-net looks for in an input image. These visualizations help in breaking the black-box like nature of neural nets and helps gain important insights on how the model actually works. 
@@ -34,19 +32,14 @@ One of the examples could be “channel algebra” where we simultaneously optim
 </p>
 
 <p align="center">
-<img src = "https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/algebra_2.jpg?raw=true">
-
-**Figure 2**:Optimizing the sums and differences of channel activations
+<img src = "https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/algebra_2.jpg?raw=true"> Figure 2:Optimizing the sums and differences of channel activations
 </p>
 
 The user can also make and use custom gradient masks with numpy to spatially blend or restrict certain optimization functions.
 
 <p align="center">
 <img src = "https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/grad_mask.jpg?raw=true">
-
-
-**Figure 3**: Optimizing 5 different channels with gradient masks
-
+Figure 3: Optimizing 5 different channels with gradient masks
 </p>
 
 Torch-dreams is simple enough for artists to generate fascinating patterns, at the same time it’s also flexible enough for researchers to run large experiments.
