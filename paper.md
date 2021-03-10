@@ -4,7 +4,7 @@
 ## Summary
 When a deep-learning model looks for an eye, what does it look for ? Does it look for eyebrows ? or eyeballs maybe ? This is exactly what torch-dreams can help us answer.
 
-![alt text](https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/face_segmentation_breakdown_with_torch_dreams.jpg?raw=true)
+![ A breakdown of a facial segmentation model’s classes with torch-dreams](https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/face_segmentation_breakdown_with_torch_dreams.jpg?raw=true)
 
 Torch-Dreams is a tool that helps visualize what each layer/channel/unit within a neural-net looks for in an input image. These visualizations help in breaking the black-box like nature of neural nets and helps gain important insights on how the model actually works. 
 
@@ -24,12 +24,12 @@ One of the key advantages of this library is the amount of freedom that it provi
 
 One of the examples could be “channel algebra” where we simultaneously optimize the sum or the difference of multiple channels in a single input image.  
 
-![alt text](https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/algebra_1.jpg?raw=true)
+![](https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/algebra_1.jpg?raw=true)
 
-![alt text](https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/algebra_2.jpg?raw=true)
+![Optimizing the sums and differences of channel activations](https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/algebra_2.jpg?raw=true)
 
 The user can also make and use custom gradient masks with numpy to spatially blend or restrict certain optimization functions.
 
-![alt text](https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/grad_mask.jpg?raw=true)
+![Optimizing 5 different channels with gradient masks](https://github.com/Mayukhdeb/torch-dreams/blob/joss-paper/images/paper/grad_mask.jpg?raw=true)
 
 Torch-dreams is simple enough for artists to generate fascinating patterns, at the same time it’s also flexible enough for researchers to run large experiments.
