@@ -17,7 +17,7 @@ layers_to_use = [model.Mixed_6c.branch1x1]
 
 def my_custom_func(layer_outputs):
     
-    loss = layer_outputs[0].mean()
+    loss = -layer_outputs[0].mean()
     return loss
 
 config = {
@@ -62,7 +62,8 @@ grad_mask_2 = np.repeat(np.linspace(1, 0, 512),512*3).reshape(512,512,3).astype(
 
 def custom_func(layer_outputs):
     loss = layer_outputs[0][30].mean()
-    return loss
+    return -loss
+
 
 config = {
     "image_path": "images/sample_small.jpg",
@@ -72,12 +73,16 @@ config = {
     "iterations": 20,
     "lr": 0.07,
     "custom_func": [custom_func],
-    "max_rotation": 0.5,
+    "max_rotation": 0.1,
     "grayscale": False,
-    "gradient_smoothing_coeff": 0.1,
-    "gradient_smoothing_kernel_size": 3,
-    "grad_mask": [grad_mask]
+    "gradient_smoothing_coeff": None,
+    "gradient_smoothing_kernel_size": None,
+    "grad_mask": [grad_mask],
+    "max_roll_x": 100,
+    "max_roll_y": 100,
+    "add_laplacian": False
 }
+
 
 config2, config3 = config.copy(), config.copy()
 config2["grad_mask"] = [grad_mask_2]

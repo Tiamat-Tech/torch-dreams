@@ -33,16 +33,19 @@ model = models.inception_v3(pretrained=True)
 dreamy_boi = dreamer(model)
 
 config = {
-    "image_path": "noise.jpg",
+    "image_path": "seed.jpg",
     "layers": [model.Mixed_6a],
     "octave_scale": 1.1,  
-    "num_octaves": 14,  
+    "num_octaves": 16,  
     "iterations": 20,  
     "lr": 0.05,
     "max_rotation": 0.9,                  ## optional
+    "max_roll_x": 100,                    ## optional
+    "max_roll_y": 100,                    ## optional
     "custom_func":  None,                 ## optional
-    "gradient_smoothing_kernel_size": 9,  ## optional
-    "gradient_smoothing_coeff": 1.5       ## optional
+    "add_laplacian": True,                ## optional
+    "gradient_smoothing_coeff": 0.1,      ## optional
+    "gradient_smoothing_kernel_size": 9   ## optional
 }
 
 out = dreamy_boi.deep_dream(config)  
@@ -82,6 +85,10 @@ config = {
     "lr": 0.04,
     "max_rotation": 0.7,
     "custom_func":  my_custom_func,
+    "gradient_smoothing_kernel_size": None,  ##optional
+    "gradient_smoothing_coeff": None,        ##optional
+    'max_roll_x':None,                       ##optional
+    'max_roll_y':None                        ##optional
 }
 
 out = dreamy_boi.deep_dream(config)
@@ -108,7 +115,9 @@ config = {
     "custom_func": None,
     "max_rotation": 0.5,
     "gradient_smoothing_coeff": 0.1,
-    "gradient_smoothing_kernel_size": 3
+    "gradient_smoothing_kernel_size": 3,
+    'max_roll_x':None,                       ##optional
+    'max_roll_y':None                        ##optional
 }
 ```
 
@@ -141,7 +150,14 @@ config = {
 * `gradient_smoothing_coeff` (optional): Higher -> stronger blurring. 
 * `gradient_smoothing_kernel_size`: (optional) Kernel size to be used when applying gaussian blur.
 
-## Important links:
+### New in `v1.1.1`
+* `add_laplacian` (optional): If set to `True`, it adds the high frequency components from the higher octave into the resulting image. Set it to `True` if you want to preserve the details of the original image as much as possible (especially when using gradient masks)
+* `max_roll_x` (optional): sets the maximum amount of random roll the image can undergo at each iteration. 
+    * By default, it's set to `None`, which means that the roll values would be a random value between 0 and the width of the image. 
+    * Set it to 0 if you want to disable any random roll in this direction. 
+* `max_roll_y` (optional): Same as `max_roll_x` but in Y direction
+
+## Relevant Reading:
 
 * [Feature visualization by Olah, et al.](https://distill.pub/2017/feature-visualization/)
 * [Google AI blog on DeepDreams](https://ai.googleblog.com/2015/06/inceptionism-going-deeper-into-neural.html)

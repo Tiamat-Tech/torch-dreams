@@ -15,6 +15,8 @@ from .constants import LOWER_IMAGE_BOUND_GRAY
 
 from .dreamer_utils import get_gradients
 
+from .image_param import image_param
+
 def dream_on_octave_with_masks(model, image_np, layers, iterations, lr,  custom_funcs = [None], max_rotation = 0.2, gradient_smoothing_coeff = None, gradient_smoothing_kernel_size = None, grad_mask =None, device = None, default_func = None):
 
     """
@@ -36,7 +38,9 @@ def dream_on_octave_with_masks(model, image_np, layers, iterations, lr,  custom_
     }
     """
         
-    image_tensor = pytorch_input_adapter(image_np, device = device)
+    image_tensor = pytorch_input_adapter(image_np, device = device).unsqueeze(0)
+    image_parameter  = image_param(image_tensor)
+    image_parameter.get_optimizer(lr = lr)
     if grad_mask is not None:
         grad_mask_tensors = [pytorch_input_adapter(g_mask, device = device).double() for g_mask in grad_mask]
 
@@ -44,9 +48,9 @@ def dream_on_octave_with_masks(model, image_np, layers, iterations, lr,  custom_
         """
         rolling 
         """
-        roll_x, roll_y = find_random_roll_values_for_tensor(image_tensor)
+        roll_x, roll_y = find_random_roll_values_for_tensor(image_parameter.tensor)
 
-        image_tensor_rolled = roll_torch_tensor(image_tensor, roll_x, roll_y) 
+        image_tensor_rolled = roll_torch_tensor(image_parameter.tensor, roll_x, roll_y) 
         
         """
         rotating
@@ -62,7 +66,7 @@ def dream_on_octave_with_masks(model, image_np, layers, iterations, lr,  custom_
         gradients_tensors = []
         for c in range(len(custom_funcs)):
 
-            gradients_tensor = get_gradients(net_in = image_tensor_rolled_rotated, net = model, layers = layers,default_func = default_func,custom_func= custom_funcs[c]).detach()
+            gradients_tensor = get_gradients(net_in = image_tensor_rolled_rotated.detach(), net = model, layers = layers,default_func = default_func,custom_func= custom_funcs[c])
             gradients_tensors.append(gradients_tensor)
         """
         unrotate and unroll gradients of the image tensor
@@ -73,30 +77,30 @@ def dream_on_octave_with_masks(model, image_np, layers, iterations, lr,  custom_
         """
         image update
         """
-        # print(gradient_smoothing_sigma, gradient_smoothing_kernel_size)
         
         if gradient_smoothing_kernel_size is not None and gradient_smoothing_coeff is not None:
             
             sigma = ((i + 1) / iterations) * 2.0 + gradient_smoothing_coeff
-            gradients_tensors = [CascadeGaussianSmoothing(kernel_size = gradient_smoothing_kernel_size, sigma = sigma, device = device)(gradients_tensor.unsqueeze(0)).squeeze(0) for gradients_tensor in gradients_tensors]
+            gradients_tensors = [CascadeGaussianSmoothing(kernel_size = gradient_smoothing_kernel_size, sigma = sigma, device = device)(gradients_tensor).squeeze(0) for gradients_tensor in gradients_tensors]
 
             for m in range(len(gradients_tensors)):
-
                 gradients_tensor = gradients_tensors[m]
                 g_norm = torch.std(gradients_tensor)
-                image_tensor.data = image_tensor.data + (lr *(gradients_tensor.data /g_norm) * grad_mask_tensors[m] )## can confirm this is still on the GPU if you have one
+
+                image_parameter.set_gradients((gradients_tensor.data /g_norm) * grad_mask_tensors[m])
+                image_parameter.optimizer.step()
         
         else:
            for m in range(len(gradients_tensors)):
-
                 gradients_tensor = gradients_tensors[m]
                 g_norm = torch.std(gradients_tensor)
-                
-                image_tensor.data = image_tensor.data + (lr *(gradients_tensor.data /g_norm) * grad_mask_tensors[m] )## can confirm this is still on the GPU if you have one
-        
-        image_tensor.data = torch.max(torch.min(image_tensor.data.float(), UPPER_IMAGE_BOUND), LOWER_IMAGE_BOUND).squeeze(0)
 
-    img_out = image_tensor.detach().cpu()
+                image_parameter.set_gradients(((gradients_tensor.data /g_norm) * grad_mask_tensors[m]).to(dtype = torch.float32))
+                image_parameter.optimizer.step()
+
+        image_tensor.data = torch.max(torch.min(image_tensor.data.float(), UPPER_IMAGE_BOUND), LOWER_IMAGE_BOUND)
+
+    img_out = image_parameter.tensor.squeeze(0).detach().cpu()
 
     img_out_np = img_out.numpy()
     img_out_np = img_out_np.transpose(1,2,0)
@@ -122,15 +126,18 @@ def dream_on_octave(model, image_np, layers, iterations, lr,  custom_func = None
     }
     """
 
-    image_tensor = pytorch_input_adapter(image_np, device = device)
+    image_tensor = pytorch_input_adapter(image_np, device = device).unsqueeze(0)
+    image_parameter  = image_param(image_tensor)
+    image_parameter.get_optimizer(lr = lr)
+
     for i in range(iterations):
         """
         rolling 
         """
 
-        roll_x, roll_y = find_random_roll_values_for_tensor(image_tensor, max_roll_x= max_roll_x, max_roll_y = max_roll_y)
+        roll_x, roll_y = find_random_roll_values_for_tensor(image_parameter.tensor, max_roll_x= max_roll_x, max_roll_y = max_roll_y)
 
-        image_tensor_rolled = roll_torch_tensor(image_tensor, roll_x, roll_y) 
+        image_tensor_rolled = roll_torch_tensor(image_parameter.tensor, roll_x, roll_y) 
         
         """
         rotating
@@ -138,14 +145,13 @@ def dream_on_octave(model, image_np, layers, iterations, lr,  custom_func = None
         
         theta = get_random_rotation_angle(theta_max= max_rotation)
 
-
         image_tensor_rolled_rotated = rotate_image_tensor(image_tensor = image_tensor_rolled, theta = theta, device = device)
 
         """
         getting gradients
         """
-        gradients_tensor = get_gradients(net_in = image_tensor_rolled_rotated, net = model, layers = layers, default_func = default_func ,custom_func= custom_func).detach()
-
+        gradients_tensor = get_gradients(net_in = image_tensor_rolled_rotated.detach(), net = model, layers = layers, default_func = default_func ,custom_func= custom_func).detach()
+        # print(gradients_tensor.mean(), "  grad mean")
         """
         unrotate and unroll gradients of the image tensor
         """
@@ -154,8 +160,12 @@ def dream_on_octave(model, image_np, layers, iterations, lr,  custom_func = None
 
         """
         image update
+
+        to do:
+            do an optimizer.step() below and get same test results 
+            make sure grads are normalized
         """
-        
+        image_parameter.optimizer.zero_grad()
         if gradient_smoothing_kernel_size is not None and gradient_smoothing_coeff is not None:
             
             sigma = ((i + 1) / iterations) * 2.0 + gradient_smoothing_coeff
@@ -163,14 +173,16 @@ def dream_on_octave(model, image_np, layers, iterations, lr,  custom_func = None
             smooth_gradients_tensor = CascadeGaussianSmoothing(kernel_size = gradient_smoothing_kernel_size, sigma = sigma, device = device)(gradients_tensor.unsqueeze(0)).squeeze(0)
             g_norm = torch.std(smooth_gradients_tensor)
 
-            image_tensor.data = image_tensor.data + lr * (smooth_gradients_tensor.data / g_norm) ## can confirm this is still on the GPU if you have one
+            image_parameter.set_gradients(smooth_gradients_tensor.data / (g_norm + 1e-8))
+
         else:
             g_norm = torch.std(gradients_tensor)
-            image_tensor.data = image_tensor.data + lr *(gradients_tensor.data /g_norm) ## can confirm this is still on the GPU if you have one
+            image_parameter.set_gradients(gradients_tensor.data / (g_norm + 1e-8))
 
-        image_tensor.data = torch.max(torch.min(image_tensor.data, UPPER_IMAGE_BOUND), LOWER_IMAGE_BOUND).squeeze(0)
-       
-    img_out = image_tensor.detach().cpu()
+        image_parameter.optimizer.step()
+
+    image_parameter.clip_to_bounds(UPPER_IMAGE_BOUND, LOWER_IMAGE_BOUND)
+    img_out = image_parameter.tensor.squeeze(0).detach().cpu()
 
     img_out_np = img_out.numpy()
     img_out_np = img_out_np.transpose(1,2,0)
