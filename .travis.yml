@@ -6,7 +6,7 @@ dist: focal
 
 # command to install dependencies, e.g. pip install -r requirements.txt 
 install: 
-  - pip install .
+#   - pip install .
   - pip install -r requirements.txt
 script:  
   - python setup.py test 
