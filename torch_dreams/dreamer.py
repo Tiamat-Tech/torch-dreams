@@ -70,46 +70,46 @@ class dreamer():
         else:
             image_parameter = deepcopy(image_parameter)
 
-        if image_parameter.optimizer is None:
-            image_parameter.get_optimizer(lr = lr, weight_decay = weight_decay)
+        # if image_parameter.optimizer is None:
+        #     image_parameter.get_optimizer(lr = lr, weight_decay = weight_decay)
 
-        if self.transforms is None:
-            self.get_default_transforms(rotate = rotate_degrees, scale_max = scale_max, scale_min= scale_min, translate_x = translate_x, translate_y = translate_y)
+        # if self.transforms is None:
+        #     self.get_default_transforms(rotate = rotate_degrees, scale_max = scale_max, scale_min= scale_min, translate_x = translate_x, translate_y = translate_y)
 
-        hooks = []
-        for layer in layers:
-            hook = Hook(layer)
-            hooks.append(hook)
+        # hooks = []
+        # for layer in layers:
+        #     hook = Hook(layer)
+        #     hooks.append(hook)
 
-        for i in tqdm(range(iters), disable= self.quiet):
-            image_parameter.optimizer.zero_grad()
+        # for i in tqdm(range(iters), disable= self.quiet):
+        #     image_parameter.optimizer.zero_grad()
 
-            img = fft_to_rgb(height = image_parameter.height, width =  image_parameter.width, image_parameter =  image_parameter.param, device= self.device)
+        #     img = fft_to_rgb(height = image_parameter.height, width =  image_parameter.width, image_parameter =  image_parameter.param, device= self.device)
 
-            img = lucid_colorspace_to_rgb(img,device= self.device)
-            img = torch.sigmoid(img)
-            img = normalize(img, device= self.device)
-            img = self.transforms(img)
+        #     img = lucid_colorspace_to_rgb(img,device= self.device)
+        #     img = torch.sigmoid(img)
+        #     img = normalize(img, device= self.device)
+        #     img = self.transforms(img)
 
-            model_out = self.model(img)
+        #     model_out = self.model(img)
 
-            layer_outputs = []
+        #     layer_outputs = []
 
-            for hook in hooks:
-                out = hook.output[0]
-                layer_outputs.append(out)
+        #     for hook in hooks:
+        #         out = hook.output[0]
+        #         layer_outputs.append(out)
 
-            if custom_func is not None:
-                loss = custom_func(layer_outputs)
-            else:
-                loss = self.default_func(layer_outputs)
-            loss.backward()
-            image_parameter.clip_grads(grad_clip= grad_clip)
-            image_parameter.optimizer.step()
+        #     if custom_func is not None:
+        #         loss = custom_func(layer_outputs)
+        #     else:
+        #         loss = self.default_func(layer_outputs)
+        #     loss.backward()
+        #     image_parameter.clip_grads(grad_clip= grad_clip)
+        #     image_parameter.optimizer.step()
         
 
-        for hook in hooks:
-            hook.close()
+        # for hook in hooks:
+        #     hook.close()
 
         return image_parameter
     
