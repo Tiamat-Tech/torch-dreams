@@ -30,7 +30,7 @@ class test(unittest.TestCase):
             iters = 5
         )
 
-        # image_param.save(filename = 'test_single_model.jpg')
+        image_param.save(filename = 'test_single_model.jpg')
 
         # self.assertTrue(os.path.exists('test_single_model.jpg'))
         # self.assertTrue(isinstance(image_param, auto_image_param), 'should be an instance of auto_image_param')
