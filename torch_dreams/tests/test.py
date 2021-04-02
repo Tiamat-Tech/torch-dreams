@@ -25,10 +25,10 @@ class test(unittest.TestCase):
 
         dreamy_boi = dreamer(model = model, device= 'cpu', quiet= False)
 
-        # image_param = dreamy_boi.render(
-        #     layers = [model.Mixed_6a],
-        #     iters = 5
-        # )
+        image_param = dreamy_boi.render(
+            layers = [model.Mixed_6a],
+            iters = 5
+        )
 
         # image_param.save(filename = 'test_single_model.jpg')
 
