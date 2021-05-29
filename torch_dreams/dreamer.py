@@ -69,6 +69,7 @@ class dreamer():
         Returns:
             image_parameter instance: To show image, use: plt.imshow(image_parameter)
         """
+
         if image_parameter is None:
             image_parameter = auto_image_param(height= height, width = width, device = self.device, standard_deviation = 0.01)
         else:
@@ -80,54 +81,60 @@ class dreamer():
         if self.transforms is None:
             self.get_default_transforms(rotate = rotate_degrees, scale_max = scale_max, scale_min= scale_min, translate_x = translate_x, translate_y = translate_y)
 
+        """ 
+        Create PyTorch hooks on the layers 
+        that we have to watch
+        """
         hooks = []
         for layer in layers:
             hook = Hook(layer)
             hooks.append(hook)
 
-        if isinstance(image_parameter, masked_image_param):
-            self.random_resize_pair = pair_random_resize(max_size_factor = scale_max, min_size_factor = scale_min)
-            self.random_affine_pair = pair_random_affine(degrees = rotate_degrees, translate_x = translate_x, translate_y = translate_y)
-
         for i in tqdm(range(iters), disable= self.quiet):
             
+            ## zero grads to prevent grad accumulation
             image_parameter.optimizer.zero_grad()
 
+            ## forward pass returns the image in spatial domain, ready to be fed into the model
             img = image_parameter.forward(device = self.device)
 
-            if isinstance(image_parameter, masked_image_param):
-                img_transformed, mask_transformed, original_image_transformed = self.random_resize_pair(tensors = [ img,image_parameter.mask.to(self.device), image_parameter.original_nchw_image_tensor])
-                img_transformed, mask_transformed, original_image_transformed = self.random_affine_pair([img_transformed, mask_transformed, original_image_transformed])
-                
-                img = img_transformed * mask_transformed.to(self.device) + original_image_transformed.float() * (1-mask_transformed.to(self.device))
+            ## some transforms to achieve robustness
+            img = self.transforms(img)
 
-            else:
-                img = self.transforms(img)
-
+            ## forward pass thorugh model
             model_out = self.model(img)
 
+            ## store all layer outputs in a list, maybe use a dict someday, that would be better
             layer_outputs = []
 
             for hook in hooks:
                 out = hook.output[0]
                 layer_outputs.append(out)
 
+            ## if no custom objective is given, use the default one
             if custom_func is not None:
                 loss = custom_func(layer_outputs)
             else:
                 loss = self.default_func(layer_outputs)
 
+            ## calculate gradients 
             loss.backward()
+
+            ## clip gradients to increase stability
             image_parameter.clip_grads(grad_clip= grad_clip)
 
+            ## if it's a masked image param, then apply mask to the gradient
             if isinstance(image_parameter, masked_image_param):
                 image_parameter.apply_mask_on_grads() 
 
+            ## update image param in fourier domain
             image_parameter.optimizer.step()
 
+        ## close all pytorch hooks after the job is done 
         for hook in hooks:
             hook.close()
-
+        
+        ## stop reading these comments and go have some water
         return image_parameter
     
     def get_snapshot(self, layers, input_tensor):
