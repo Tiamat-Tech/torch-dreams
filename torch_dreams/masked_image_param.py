@@ -2,6 +2,14 @@ import cv2
 import torch
 from .custom_image_param import custom_image_param
 from .transforms import imagenet_transform
+from .utils import (
+    fft_to_rgb_custom_img,
+    lucid_colorspace_to_rgb, 
+    init_image_param, 
+    fft_to_rgb,
+    chw_rgb_to_fft_param
+)
+
 
 class masked_image_param(custom_image_param):
     def __init__(self, mask_tensor, image = None , device = 'cuda'):
@@ -21,7 +29,6 @@ class masked_image_param(custom_image_param):
         self.height = mask_tensor.shape[-2]
 
         if image is None:
-            from .utils import init_image_param, fft_to_rgb, lucid_colorspace_to_rgb
             if self.width %2 ==1:
                 self.param = init_image_param(height = self.height, width = self.width + 1, sd = 0.01, device = device)
             else:
@@ -30,8 +37,6 @@ class masked_image_param(custom_image_param):
             img = lucid_colorspace_to_rgb(t = img, device = device)
             image = torch.sigmoid(img)
 
-
-            # image = torch.ones(1,3,self.height,self.width)
 
         super().__init__(image = image, device= device)
 
@@ -51,10 +56,16 @@ class masked_image_param(custom_image_param):
 
     def get_spatial_grads(self, device):
 
-        from .utils import fft_to_rgb_custom_img, lucid_colorspace_to_rgb
         out = fft_to_rgb_custom_img(height = self.height, width = self.width, image_parameter= self.param.grad.data, device= device)
         out = self.normalize(lucid_colorspace_to_rgb(t = out, device= device).clamp(0,1), device = self.device)
         return out
+    
+    def apply_mask_on_grads(self):
+        
+        self.param.grad.data = chw_rgb_to_fft_param(
+            x = (self.get_spatial_grads(self.device)  * self.mask).squeeze(0) , 
+            device = self.device
+        )
 
 
     def forward(self, device):

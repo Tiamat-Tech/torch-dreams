@@ -7,6 +7,7 @@ from .utils import (
     fft_to_rgb, 
     lucid_colorspace_to_rgb, 
     normalize, 
+    chw_rgb_to_fft_param
 )
 
 from .transforms import random_resize , pair_random_resize, pair_random_affine, imagenet_transform
@@ -115,20 +116,14 @@ class dreamer():
                 loss = custom_func(layer_outputs)
             else:
                 loss = self.default_func(layer_outputs)
+
             loss.backward()
             image_parameter.clip_grads(grad_clip= grad_clip)
 
-
             if isinstance(image_parameter, masked_image_param):
-                from .utils import chw_rgb_to_fft_param
-                # print(image_parameter.param.grad.data.shape)
-                grad_spatial_domain = image_parameter.get_spatial_grads(self.device)
-                print(grad_spatial_domain.shape)
-                grad_spatial_domain *= image_parameter.mask
-                image_parameter.param.grad.data = chw_rgb_to_fft_param(x = grad_spatial_domain[0], device = self.device)
+                image_parameter.apply_mask_on_grads() 
 
             image_parameter.optimizer.step()
-        
 
         for hook in hooks:
             hook.close()
