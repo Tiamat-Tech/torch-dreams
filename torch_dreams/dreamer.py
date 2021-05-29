@@ -117,6 +117,16 @@ class dreamer():
                 loss = self.default_func(layer_outputs)
             loss.backward()
             image_parameter.clip_grads(grad_clip= grad_clip)
+
+
+            if isinstance(image_parameter, masked_image_param):
+                from .utils import chw_rgb_to_fft_param
+                # print(image_parameter.param.grad.data.shape)
+                grad_spatial_domain = image_parameter.get_spatial_grads(self.device)
+                print(grad_spatial_domain.shape)
+                grad_spatial_domain *= image_parameter.mask
+                image_parameter.param.grad.data = chw_rgb_to_fft_param(x = grad_spatial_domain[0], device = self.device)
+
             image_parameter.optimizer.step()
         
 

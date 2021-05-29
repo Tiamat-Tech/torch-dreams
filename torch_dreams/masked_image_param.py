@@ -49,6 +49,14 @@ class masked_image_param(custom_image_param):
         t = self.forward(device= device).squeeze(0).clamp(0,1).detach()  + self.original_nchw_image_tensor.to(device) * (1-self.mask.to(device)) 
         return t.squeeze(0)
 
+    def get_spatial_grads(self, device):
+
+        from .utils import fft_to_rgb_custom_img, lucid_colorspace_to_rgb
+        out = fft_to_rgb_custom_img(height = self.height, width = self.width, image_parameter= self.param.grad.data, device= device)
+        out = self.normalize(lucid_colorspace_to_rgb(t = out, device= device).clamp(0,1), device = self.device)
+        return out
+
+
     def forward(self, device):
         return self.normalize(self.postprocess(device = device), device= device).clamp(0,1) * self.mask.to(device) 
 
